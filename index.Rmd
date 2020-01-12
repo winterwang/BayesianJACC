@@ -1,0 +1,87 @@
+---
+title: "Bayesian Survival Analysis"
+subtitle: "test on the JACC study data"
+author: 
+    Chaochen Wang <br>
+    Aichi Medical University
+date: "2020-01-14"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    lib_dir: libs
+    nature:
+      countdown: 60000
+      highlightStyle: github
+      highlightLines: true
+      highlightSpans: true
+      countIncrementalSlides: false
+---
+
+
+class: middle
+# Introduction
+
+- Survival analysis is at the core of epidemiological data analysis. 
+
+- The Cox Proportional Hazard (PH) regression model is (still the most) popular model. 
+
+    -  because of its familiarity and convenience
+
+- Recently, there has been increased interest on applications of survival analysis based on Bayesian methodology.
+
+
+---
+class: middle
+
+# Objectives
+
+- To try and use a parametric Bayesian Survival Model approach and compare with the traditional PH model. 
+
+- The null hypothesis is: the risk of mortality from stroke is the same for people with different milk intake habits.
+
+---
+class: middle 
+
+# Data for analysis
+
+- The JACC study data: 
+
+    - 110585 participants (46395 men and 64190 women) aged between 40-79 at baseline
+    
+---
+class: middle
+
+# Exclusion criteria
+
+.med[
+1. With stroke history: n = 1496 (915 men and 581 wmen);
+2. With cancer history: n = 1461 (411 men and 1050 women);
+3. With myocardial infarction history: n = 2994 (1310 men and 1684 women);
+4. With ischemic heart diseases history: n = 186 (91 men, 95 women);
+5. With other heart diseases history (ICD9 codes: 420-429):  n = 518 (204 men and 314 women);
+6. Did not answer the question about milk intake frequency: n = 9545 (3593 men and 5952 women); 
+7. Finally, n = 94385 (39386 men and 54999 women) are left in the data
+]
+
+---
+class: middle
+
+# N of events:
+
+- Total Stroke mortality confirmed: 
+  - 2675 (1352 men and 1323 women)
+  
+- Subtypes of stroke: 
+  - Ischemic stroke: <br>957 (520 men and 437 women)
+  - Hemorrhagic stroke: <br>952 (432 men and 520 women)
+
+---
+class: middle
+
+---
+class: middle
+# Merits and demerits
+
+- It generates conclusion based on the synthesis of new information from an observed data and historical knowledge or expert opinion.
+
+- Therefore, Bayesian survival analysis reflects researches subjective beliefs. 
