@@ -370,11 +370,15 @@ background-size: cover
 ---
 class: middle, center
 
-# Unfortunately, the other results are still calculating.......
+# Unfortunately, the other results are still under calculation....
 
 The age adjusted model took about 3 hours.
 
-I really need a faster computer..
+The multivariable adjusted model has been runing for about 10 hours, and still running.
+
+
+--
+I really need a faster computer.
 
 ---
 class: middle, center
