@@ -76,7 +76,116 @@ class: middle
   - Hemorrhagic stroke: <br>952 (432 men and 520 women)
 
 ---
+class: right
+background-image: url("/fig/KMfigMen.png")
+background-position: 60% 50%
+background-size: contain
+## Men
+
+---
+class: right
+background-image: url("/fig/KMfigwomen.png")
+background-position: 60% 50%
+background-size: contain
+## Women
+
+---
+class: middle, center
+# Baseline characteristics 
+
+(please see the handout Table 1 & 2) 
+
+(skipped in the talk)
+
+---
+class: middle, 
+
+# Traditional PH model results
+
+(please see the handout Table 3)
+
+.med[
+1. Total stroke: <br> only daily drinkers in men had somewhat lower hazard ratio (0.87, 95%CI: 0.76, 1.01)
+
+2. Hemorrhagic stroke: <br> no apparent association for men/women
+
+3. Ischemic stroke: <br> men had milk intake more than 1-2 t/w had **"significantly"** lower hazard compared with non-drinkers
+]
+
+
+---
+class: middle, center
+# Do the results really answer what we are interested in? 
+
+---
 class: middle
+## Interpretation of the P value: 
+
+- The earth is round  (p < 0.05).
+
+
+.pull-left[
+```{r p1, echo=FALSE, out.width = '85%', cache=TRUE}
+knitr::include_graphics("fig/pvalueyay.jpg")
+```
+]
+
+.pull-right[
+```{r p2, echo=FALSE, out.width = '95%', cache=TRUE}
+knitr::include_graphics("fig/pvalue.png")
+```
+]
+
+???
+The p-value is the probability of the observed outcome plus all “more extreme” outcomes under the assumption that the experiment can be repeated for infinite times.
+
+---
+class: middle, inverse
+background-image: url("/fig/CI.gif")
+background-position: 50% 50%
+background-size: contain
+
+---
+class: middle
+
+## Assumptions: 
+
+1. The experiment can be repeated.
+
+2. There is a true value of interest (HR) that does not move.
+
+Both are **unrealistic** for a huge cohort study like the JACC study, and may not help in answering the question that we are really interested in.
+
+---
+class: middle
+
+## The real research questions are: 
+
+- What is **the probability** that people who drink milk everyday (or other frequency) had lower hazard of dying from stroke compared with people who don't ?
+
+- If someone does not understand the concept of "hazard", then, the question should be changed into: <br> do people drink milk everyday (or other frequency) have **longer survival time/slower rate of dying** that is free from stroke mortality risk?
+
+---
+class: middle
+
+## Bayesian parametric survival model can help us:
+
+
+- Weibull model is useful because it can be expressed as both
+    - accelerated failure time (AFT) model 
+    - proportional hazard model
+
+(details skipped, please refer to the handout.)
+
+
+---
+class: middle
+
+### Codes for the crude model in men
+
+   
+    
+
 
 ---
 class: middle
