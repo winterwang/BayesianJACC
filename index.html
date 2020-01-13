@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="author" content="Chaochen Wang   Aichi Medical University" />
     <meta name="date" content="2020-01-14" />
+    <script src="libs/kePrint-0.0.1/kePrint.js"></script>
     <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
   </head>
   <body>
@@ -179,19 +180,379 @@ class: middle
 ---
 class: middle
 
-### Codes for the crude model in men
+### Codes for the crude Weibull survival model
 
-   
+We use the [**BUGS**](https://www.mrc-bsu.cam.ac.uk/software/bugs/) (**B**ayesian inference **U**sing **G**ibbs **S**ampling) language to describe the model:
+
+.small[
+```r
+jacc.weibull.model &lt;- function() {
+  for(i in 1:39386){# loop through the male subjects
+*    is.censored[i] ~ dinterval(t[i], c[i])
+    t[i] ~ dweib(shape, lambda[i])
+    lambda[i] &lt;- exp(-mu[i] * shape)
+*    mu[i] &lt;- beta[1] + beta[2] * equals(Mlkfre[i], 2) +
+*      beta[3] * equals(Mlkfre[i], 3) + 
+*      beta[4] * equals(Mlkfre[i], 4) +
+*      beta[5] * equals(Mlkfre[i], 5) 
+  }
+```
+] 
     
+---
+class: middle
+
+### Specify the priors, and generate values
+
+.small[
+```r
+  ## priors for betas
+  for(j in 1:5){
+    beta[j] ~ dnorm(0, 0.001)
+  } # increase the number here when adding covariates
+  
+  ### prior for shape
+  shape ~ dgamma(.001, .001)
+  
+  ### Generated values
+*  AFT[2] &lt;- exp(beta[2])
+*  HR[2] &lt;- exp(shape * beta[2])
+*  p.crit[2] &lt;- step(1 - HR[2]) # = 1 if HR[2] &lt; 1
+  
+  AFT[3] &lt;- exp(beta[3])
+  HR[3] &lt;- exp(shape * beta[3])
+  p.crit[3] &lt;- step(1 - HR[3])
+  
+  AFT[4] &lt;- exp(beta[4])
+  HR[4] &lt;- exp(shape * beta[4])
+  p.crit[4] &lt;- step(1 - HR[4])
+  
+  AFT[5] &lt;- exp(beta[5])
+  HR[5] &lt;- exp(shape * beta[5])
+  p.crit[5] &lt;- step(1 - HR[5])
+```
+]
 
 
 ---
 class: middle
-# Merits and demerits
 
-- It generates conclusion based on the synthesis of new information from an observed data and historical knowledge or expert opinion.
+### Run the model (the crude one took me about 1 hours...)
 
-- Therefore, Bayesian survival analysis reflects researches subjective beliefs.
+.small[
+```r
+library(R2jags) #conect to jags sampling engine in R
+jagsfit &lt;- jags.parallel(
+                   data = JACCdata,
+                   parameters.to.save = 
+                              c("beta[5]", "HR[5]", "AFT[5]"),
+                   #add more variables if you want to check more
+*                   n.iter = 10000, 
+*                   n.burnin = 2500, 
+*                   n.chains = 3,
+                   model.file = jacc.weibull.model)
+```
+]
+
+
+---
+class: middle, center, inverse 
+
+# Output and model checking
+
+---
+class: middle
+
+### Direct output:(1)
+
+.small[
+```r
+# Inference for Bugs model at "jacc.weibull.model", fit using jags,
+#  3 chains, each with 10000 iterations (first 2500 discarded), n.thin = 7
+#  n.sims = 3213 iterations saved. Sample size per chain = 1071 
+# 1. Empirical mean and standard deviation for each variable,
+#    plus standard error of the mean:
+#                   Mean        SD   Naive SE Time-series SE
+# AFT[2]        0.922303  0.064441 0.00113685     0.00420403
+# AFT[3]        0.834723  0.051485 0.00090830     0.00362857
+# AFT[4]        0.848329  0.052439 0.00092513     0.00401102
+# AFT[5]        0.928095  0.041834 0.00073803     0.00336613
+# HR[2]         0.890533  0.090586 0.00159811     0.00604246
+# HR[3]         0.769913  0.069116 0.00121934     0.00486858
+# HR[4]         0.788205  0.070624 0.00124594     0.00531505
+*# HR[5]         0.897882  0.058477 0.00103164     0.00468654
+*# p.crit[2]     0.871460  0.334743 0.00590548     0.01814848
+*# p.crit[3]     0.996265  0.061008 0.00107630     0.00214585
+*# p.crit[4]     0.998133  0.043180 0.00076177     0.00097572
+*# p.crit[5]     0.953626  0.210327 0.00371056     0.02050164
+```
+]
+
+
+---
+class: middle
+
+### Direct output (2)
+
+
+.small[
+```r
+# 2. Quantiles for each variable:
+#                   2.5%          25%          50%         75%       97.5%
+# AFT[2]        0.807308     0.876649     0.918049     0.96495     1.05225
+# AFT[3]        0.738423     0.799925     0.832078     0.86719     0.94214
+# AFT[4]        0.749645     0.810952     0.847050     0.88448     0.95291
+# AFT[5]        0.847796     0.899999     0.927850     0.95594     1.01147
+# HR[2]         0.733186     0.825541     0.883106     0.94896     1.07725
+# HR[3]         0.644053     0.721892     0.765778     0.81289     0.91643
+# HR[4]         0.658787     0.737562     0.785538     0.83614     0.93282
+# HR[5]         0.788623     0.857453     0.896668     0.93613     1.01665
+```
+]
+
+---
+class: middle, inverse
+background-image: url("/fig/traceplot.png")
+background-position: 50% 50%
+background-size: contain
+
+---
+class: middle, inverse
+background-image: url("/fig/autocor.png")
+background-position: 50% 50%
+background-size: contain
+
+---
+class: middle
+
+### (Crude) hazard ratios and acceleration factors
+
+&lt;table class="table" style="font-size: 17px; margin-left: auto; margin-right: auto;"&gt;
+&lt;caption style="font-size: initial !important;"&gt;&lt;/caption&gt;
+ &lt;thead&gt;
+&lt;tr&gt;
+&lt;th style="border-bottom:hidden" colspan="1"&gt;&lt;/th&gt;
+&lt;th style="border-bottom:hidden; padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="5"&gt;&lt;div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; "&gt;Hazard ratio (HR)&lt;/div&gt;&lt;/th&gt;
+&lt;th style="border-bottom:hidden; padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="4"&gt;&lt;div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; "&gt;Acceleration factor (AF)&lt;/div&gt;&lt;/th&gt;
+&lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Milk intake &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Median &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Mean (SD) &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; 95% CrI &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; MCSE &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Probability &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Median &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Mean (SD) &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; 95% CrI &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; MCSE &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Never &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; 1-2 t/Mon &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.88 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.89 (0.09) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.73, 1.08) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0016 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 87.15% &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.92 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.92 (0.06) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.81, 1.06) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0011 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; 1-2 t/Week &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.77 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.77 (0.07) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.64, 0.92) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0012 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 99.63% &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.83 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.83 (0.05) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.74, 0.94) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0009 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; 3-4 t/Week &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.79 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.79 (0.07) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.66, 0.93) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0012 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 99.81% &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.85 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.85 (0.05) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.75, 0.95) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0009 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Daily &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.89 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.90 (0.06) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.79, 1.02) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.001 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 95.36% &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.93 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.93 (0.04) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.85, 1.01) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0007 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;tfoot&gt;
+&lt;tr&gt;&lt;td style="padding: 0; border: 0;" colspan="100%"&gt;&lt;span style="font-style: italic;"&gt;Note: &lt;/span&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="padding: 0; border: 0;" colspan="100%"&gt;
+&lt;sup&gt;&lt;/sup&gt; Abbreviations: SD, standard deviation; CrI, credible interval; MCSE, Monte Carlo Standard&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="padding: 0; border: 0;" colspan="100%"&gt;
+&lt;sup&gt;&lt;/sup&gt;  Error; Probability indicates that the p for HR smaller than 1.&lt;/td&gt;&lt;/tr&gt;
+&lt;/tfoot&gt;
+&lt;/table&gt;
+
+---
+class: middle, inverse
+background-image: url("/fig/CrudeHRdist.png")
+background-position: 50% 50%
+background-size: cover
+
+
+---
+class: middle
+
+### (Age-adjusted) hazard ratios and acceleration factors
+
+&lt;table class="table" style="font-size: 17px; margin-left: auto; margin-right: auto;"&gt;
+&lt;caption style="font-size: initial !important;"&gt;&lt;/caption&gt;
+ &lt;thead&gt;
+&lt;tr&gt;
+&lt;th style="border-bottom:hidden" colspan="1"&gt;&lt;/th&gt;
+&lt;th style="border-bottom:hidden; padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="5"&gt;&lt;div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; "&gt;Hazard ratio (HR)&lt;/div&gt;&lt;/th&gt;
+&lt;th style="border-bottom:hidden; padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="4"&gt;&lt;div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; "&gt;Acceleration factor (AF)&lt;/div&gt;&lt;/th&gt;
+&lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Milk intake &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Median &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Mean (SD) &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; 95% CrI &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; MCSE &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Probability &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Median &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Mean (SD) &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; 95% CrI &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; MCSE &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Never &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; 1-2 t/Mon &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.98 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.98 (0.11) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.78, 1.19) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0018 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 57.86% &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.98 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.99 (0.06) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.87, 1.11) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0011 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; 1-2 t/Week &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.84 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.84 (0.08) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.69, 0.99) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0014 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 97.79% &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.9 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.90 (0.05) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.80, 0.99) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0008 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; 3-4 t/Week &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.86 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.86 (0.08) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.71, 1.02) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0014 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 95.92% &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.91 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.91 (0.05) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.82, 1.01) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0009 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Daily &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.75 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.75 (0.05) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.67, 0.85) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.0009 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 100.00% &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.85 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.85 (0.03) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; (0.79, 0.91) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.006 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;tfoot&gt;
+&lt;tr&gt;&lt;td style="padding: 0; border: 0;" colspan="100%"&gt;&lt;span style="font-style: italic;"&gt;Note: &lt;/span&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="padding: 0; border: 0;" colspan="100%"&gt;
+&lt;sup&gt;&lt;/sup&gt; Abbreviations: SD, standard deviation; CrI, credible interval; MCSE, Monte Carlo Standard&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td style="padding: 0; border: 0;" colspan="100%"&gt;
+&lt;sup&gt;&lt;/sup&gt;  Error; Probability indicates that the p for HR smaller than 1.&lt;/td&gt;&lt;/tr&gt;
+&lt;/tfoot&gt;
+&lt;/table&gt;
+
+---
+class: middle, inverse
+background-image: url("/fig/AgeHRdist.png")
+background-position: 50% 50%
+background-size: cover
+
+---
+class: middle, center
+
+# Unfortunately, the other results are still calculating.......
+
+The age adjusted model took about 3 hours.
+
+I really need a faster computer..
+
+---
+class: middle, center
+
+# The estimated HRs are mostly similar to the results from Cox models.
+
+---
+class: middle, center
+
+# And we found a way to answer the real research questions in our mind.
+
+
+---
+class: middle, center
+
+# Thanks and enjoy
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
