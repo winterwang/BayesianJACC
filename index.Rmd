@@ -77,14 +77,14 @@ class: middle
 
 ---
 class: right
-background-image: url("/fig/KMfigMen.png")
+background-image: url("fig/KMfigMen.png")
 background-position: 60% 50%
 background-size: contain
 ## Men
 
 ---
 class: right
-background-image: url("/fig/KMfigwomen.png")
+background-image: url("fig/KMfigwomen.png")
 background-position: 60% 50%
 background-size: contain
 ## Women
